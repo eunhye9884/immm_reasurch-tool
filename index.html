@@ -862,7 +862,10 @@
       <div class="page-title">경쟁사 리서치 허브</div>
       <div class="page-sub">경쟁사 정보를 한 곳에서 수집하고 분석해요</div>
     </div>
-    <button class="btn-primary" onclick="showForm()">＋ 경쟁사 추가</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn-secondary" onclick="resetAll()">🗑 초기화</button>
+      <button class="btn-primary" onclick="showForm()">＋ 경쟁사 추가</button>
+    </div>
   </div>
 
   <div class="filter-bar">
@@ -1247,6 +1250,17 @@
       }));
     }
     saveCompetitors(list);
+    editingId = null;
+    showList();
+  }
+
+  // 저장된 모든 경쟁사 데이터를 삭제 (빈 배열로 재설정 → 샘플 재시드 안 함)
+  function resetAll() {
+    const total = loadCompetitors().length;
+    if (total === 0) { alert('삭제할 경쟁사 데이터가 없습니다.'); return; }
+    if (!confirm('저장된 경쟁사 ' + total + '개를 모두 삭제할까요? 되돌릴 수 없습니다.')) return;
+    saveCompetitors([]);
+    currentDetailId = null;
     editingId = null;
     showList();
   }
