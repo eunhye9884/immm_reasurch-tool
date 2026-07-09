@@ -872,70 +872,10 @@
     <button class="filter-chip">스마트스토어</button>
     <button class="filter-chip">분석 완료</button>
     <button class="filter-chip">분석 대기</button>
-    <span class="filter-count">총 1개 브랜드</span>
+    <span class="filter-count" id="filterCount">총 0개 브랜드</span>
   </div>
 
-  <div class="card-grid">
-
-    <!-- 샘플 브랜드: 스탠드오일 -->
-    <div class="competitor-card" onclick="showDetail()">
-      <div class="card-top">
-        <div>
-          <div class="card-brand">스탠드오일</div>
-          <div class="card-url">standoil.com</div>
-        </div>
-        <span class="status-badge status-done">
-          <span class="status-dot"></span>분석 완료
-        </span>
-      </div>
-
-      <div class="card-meta">
-        <div class="meta-item">
-          <div class="meta-label">가격대</div>
-          <div class="meta-value">₩69,000~129,000</div>
-        </div>
-        <div class="meta-item">
-          <div class="meta-label">타깃</div>
-          <div class="meta-value">20~30대 여성</div>
-        </div>
-        <div class="meta-item">
-          <div class="meta-label">대표 상품</div>
-          <div class="meta-value">미니 크로스백</div>
-        </div>
-        <div class="meta-item">
-          <div class="meta-label">인스타 팔로워</div>
-          <div class="meta-value">21.4만</div>
-        </div>
-      </div>
-
-      <div class="card-channels">
-        <span class="channel-tag">무신사</span>
-        <span class="channel-tag">29CM</span>
-        <span class="channel-tag">자사몰</span>
-        <span class="channel-tag">스마트스토어</span>
-      </div>
-
-      <div class="card-review-summary">
-        <div class="review-date">최근 분석 · 2026.07.07</div>
-        주요 불만: 배송 지연, 마감 품질 불균일, 소재 설명과 실물 차이 — 재구매 의향은 높으나 AS 대응 속도에 불만 집중
-      </div>
-
-      <div class="card-footer">
-        <span class="updated-at">업데이트 2026.07.07</span>
-        <div class="card-actions" onclick="event.stopPropagation()">
-          <button class="btn-icon" title="수정">✏️</button>
-          <button class="btn-icon danger" title="삭제">🗑</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 추가 유도 카드 -->
-    <div class="add-card" onclick="showForm()">
-      <div class="add-card-icon">＋</div>
-      <div class="add-card-text">새 경쟁사 추가하기</div>
-    </div>
-
-  </div>
+  <div class="card-grid" id="cardGrid"></div>
 </div>
 
 <!-- ─── 등록 폼 페이지 ─── -->
@@ -943,7 +883,7 @@
   <div class="form-header">
     <button class="btn-back" onclick="showList()">← 목록으로</button>
   </div>
-  <div class="form-title" style="margin-bottom:20px">경쟁사 등록</div>
+  <div class="form-title" id="formTitle" style="margin-bottom:20px">경쟁사 등록</div>
 
   <!-- 기본 정보 -->
   <div class="form-card">
@@ -954,23 +894,23 @@
     <div class="form-grid">
       <div class="form-group">
         <label class="form-label">브랜드명 <span class="req">*</span></label>
-        <input type="text" class="form-input" placeholder="예: 스탠드오일">
+        <input type="text" class="form-input" id="f_brand" placeholder="예: 스탠드오일">
       </div>
       <div class="form-group">
-        <label class="form-label">자사몰 URL <span class="req">*</span></label>
-        <input type="url" class="form-input" placeholder="예: https://standoil.com">
+        <label class="form-label">자사몰 URL</label>
+        <input type="url" class="form-input" id="f_url" placeholder="예: https://standoil.com">
       </div>
       <div class="form-group">
         <label class="form-label">가격대 (최소) <span class="req">*</span></label>
-        <input type="text" class="form-input" placeholder="예: 69,000">
+        <input type="text" class="form-input" id="f_priceMin" placeholder="예: 69,000">
       </div>
       <div class="form-group">
         <label class="form-label">가격대 (최대) <span class="req">*</span></label>
-        <input type="text" class="form-input" placeholder="예: 129,000">
+        <input type="text" class="form-input" id="f_priceMax" placeholder="예: 129,000">
       </div>
       <div class="form-group full">
-        <label class="form-label">타깃 고객 <span class="req">*</span></label>
-        <input type="text" class="form-input" placeholder="예: 20~30대 직장 여성, 미니멀 선호">
+        <label class="form-label">타깃 고객</label>
+        <input type="text" class="form-input" id="f_target" placeholder="예: 20~30대 직장 여성, 미니멀 선호">
       </div>
       <div class="form-group full">
         <label class="form-label">판매 채널 <span class="req">*</span></label>
@@ -987,6 +927,32 @@
     </div>
   </div>
 
+  <!-- 경쟁 지표 -->
+  <div class="form-card">
+    <div class="form-section-title">
+      경쟁 지표
+      <span class="optional-badge">선택</span>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">후기 수</label>
+        <input type="text" class="form-input" id="f_reviewCount" placeholder="예: 1,240">
+      </div>
+      <div class="form-group">
+        <label class="form-label">배송 속도</label>
+        <input type="text" class="form-input" id="f_shipping" placeholder="예: 평균 2~3일">
+      </div>
+      <div class="form-group">
+        <label class="form-label">사진 스타일</label>
+        <input type="text" class="form-input" id="f_photoStyle" placeholder="예: 화이트 배경 · 착용컷 중심">
+      </div>
+      <div class="form-group">
+        <label class="form-label">할인 빈도</label>
+        <input type="text" class="form-input" id="f_discount" placeholder="예: 월 1회 시즌오프">
+      </div>
+    </div>
+  </div>
+
   <!-- 상품 정보 -->
   <div class="form-card">
     <div class="form-section-title">
@@ -996,19 +962,19 @@
     <div class="form-grid">
       <div class="form-group">
         <label class="form-label">베스트셀러 상품명</label>
-        <input type="text" class="form-input" placeholder="예: 미니 크로스백">
+        <input type="text" class="form-input" id="f_bestName" placeholder="예: 미니 크로스백">
       </div>
       <div class="form-group">
         <label class="form-label">베스트셀러 가격</label>
-        <input type="text" class="form-input" placeholder="예: 89,000">
+        <input type="text" class="form-input" id="f_bestPrice" placeholder="예: 89,000">
       </div>
       <div class="form-group">
         <label class="form-label">주요 소재</label>
-        <input type="text" class="form-input" placeholder="예: 비건레더, PU">
+        <input type="text" class="form-input" id="f_material" placeholder="예: 비건레더, PU">
       </div>
       <div class="form-group">
         <label class="form-label">가방 종류</label>
-        <select class="form-select">
+        <select class="form-select" id="f_bagType">
           <option value="">선택하세요</option>
           <option>호보백</option>
           <option>크로스백</option>
@@ -1030,11 +996,11 @@
     <div class="form-grid">
       <div class="form-group">
         <label class="form-label">인스타그램 팔로워 수</label>
-        <input type="text" class="form-input" placeholder="예: 21.4만">
+        <input type="text" class="form-input" id="f_followers" placeholder="예: 21.4만">
       </div>
       <div class="form-group">
         <label class="form-label">게시물 빈도</label>
-        <select class="form-select">
+        <select class="form-select" id="f_postFreq">
           <option value="">선택하세요</option>
           <option>매일</option>
           <option>주 3~5회</option>
@@ -1044,7 +1010,7 @@
       </div>
       <div class="form-group full">
         <label class="form-label">주요 콘텐츠 방식</label>
-        <input type="text" class="form-input" placeholder="예: 룩북 위주, 숏폼 활발, 라이브커머스 없음">
+        <input type="text" class="form-input" id="f_content" placeholder="예: 룩북 위주, 숏폼 활발, 라이브커머스 없음">
       </div>
     </div>
   </div>
@@ -1058,11 +1024,11 @@
     <div class="form-grid single">
       <div class="form-group">
         <label class="form-label">코멘트 / 위협·기회 판단</label>
-        <textarea class="form-textarea" placeholder="예: 미니멀 포지셔닝 강함. 수납력 약점 있음. 가격대 겹침 주의."></textarea>
+        <textarea class="form-textarea" id="f_memo" placeholder="예: 미니멀 포지셔닝 강함. 수납력 약점 있음. 가격대 겹침 주의."></textarea>
       </div>
       <div class="form-group">
         <label class="form-label">모니터링 주기</label>
-        <select class="form-select">
+        <select class="form-select" id="f_monitor">
           <option value="">선택하세요</option>
           <option>매일</option>
           <option>주 1회</option>
@@ -1074,153 +1040,93 @@
 
   <div class="form-actions">
     <button class="btn-secondary" onclick="showList()">취소</button>
-    <button class="btn-primary" onclick="showList()">저장하기</button>
+    <button class="btn-primary" onclick="saveCompetitor()">저장하기</button>
   </div>
 </div>
 
 <!-- ─── 상세 페이지 ─── -->
 <div class="main detail-page" id="detailPage">
-  <div class="detail-header">
-    <div>
-      <button class="btn-back" onclick="showList()" style="margin-bottom:6px">← 목록으로</button>
-      <div class="detail-brand">스탠드오일</div>
-      <a href="#" class="detail-url">standoil.com ↗</a>
-    </div>
-    <div class="detail-actions">
-      <button class="btn-secondary">✏️ 수정</button>
-      <button class="btn-secondary" style="color:var(--danger);border-color:var(--danger)">🗑 삭제</button>
-    </div>
-  </div>
-
-  <div class="detail-grid">
-    <div>
-      <!-- 기본 정보 -->
-      <div class="detail-section">
-        <div class="detail-section-title">기본 정보</div>
-        <div class="detail-fields">
-          <div class="detail-field">
-            <div class="detail-field-label">가격대</div>
-            <div class="detail-field-value">₩69,000 ~ 129,000</div>
-          </div>
-          <div class="detail-field">
-            <div class="detail-field-label">타깃</div>
-            <div class="detail-field-value">20~30대 여성</div>
-          </div>
-          <div class="detail-field">
-            <div class="detail-field-label">판매 채널</div>
-            <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:2px">
-              <span class="channel-tag">무신사</span>
-              <span class="channel-tag">29CM</span>
-              <span class="channel-tag">자사몰</span>
-              <span class="channel-tag">스마트스토어</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 상품 정보 -->
-      <div class="detail-section">
-        <div class="detail-section-title">상품 정보</div>
-        <div class="detail-fields">
-          <div class="detail-field">
-            <div class="detail-field-label">베스트셀러</div>
-            <div class="detail-field-value">미니 크로스백</div>
-          </div>
-          <div class="detail-field">
-            <div class="detail-field-label">가격</div>
-            <div class="detail-field-value">₩89,000</div>
-          </div>
-          <div class="detail-field">
-            <div class="detail-field-label">주요 소재</div>
-            <div class="detail-field-value">비건레더, PU</div>
-          </div>
-          <div class="detail-field">
-            <div class="detail-field-label">가방 종류</div>
-            <div class="detail-field-value">크로스백</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SNS 현황 -->
-      <div class="detail-section">
-        <div class="detail-section-title">SNS 현황</div>
-        <div class="detail-fields">
-          <div class="detail-field">
-            <div class="detail-field-label">인스타 팔로워</div>
-            <div class="detail-field-value">21.4만</div>
-          </div>
-          <div class="detail-field">
-            <div class="detail-field-label">게시물 빈도</div>
-            <div class="detail-field-value">주 3~5회</div>
-          </div>
-          <div class="detail-field" style="grid-column:1/-1">
-            <div class="detail-field-label">콘텐츠 방식</div>
-            <div class="detail-field-value" style="font-weight:400;font-size:13px;color:var(--text-secondary)">룩북 위주, 착용컷 강조. 숏폼 간헐적. 라이브커머스 없음.</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 메모 -->
-      <div class="detail-section">
-        <div class="detail-section-title">메모</div>
-        <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">
-          미니멀 포지셔닝 강함. 수납력 약점 존재 — immm 차별화 포인트로 활용 가능. 가격대 겹침 주의. 모니터링 주 1회.
-        </div>
-      </div>
-    </div>
-
-    <!-- 리뷰 분석 사이드바 -->
-    <div>
-      <div class="detail-section">
-        <div class="detail-section-title">불만 리뷰 분석</div>
-        <div class="review-hint">리뷰 텍스트를 붙여넣으면 AI가 불만 패턴을 분석해요</div>
-        <textarea class="review-input-area" id="reviewText" placeholder="무신사·29CM 등에서 복사한 리뷰 텍스트를 여기에 붙여넣으세요" oninput="toggleAnalyzeBtn()"></textarea>
-        <button class="btn-analyze" id="analyzeBtn" disabled>AI 분석 실행 (리뷰 텍스트 필요)</button>
-
-        <!-- 최신 분석 결과 (펼침) -->
-        <div class="history-latest">
-          <div class="history-latest-label">최신 분석 결과</div>
-          <div class="history-date">2026.07.07 오후 3:22</div>
-          <div class="history-tags">
-            <span class="history-tag">배송 지연</span>
-            <span class="history-tag">마감 불균일</span>
-            <span class="history-tag">소재 차이</span>
-            <span class="history-tag">AS 대응 느림</span>
-          </div>
-          <div class="history-summary">
-            재구매 의향은 높은 편이나 배송 속도와 AS 대응에 불만이 반복 언급됨. 소재 질감이 상세페이지 사진과 차이 난다는 지적 다수. 마감 품질이 제품마다 달라 일관성 부재 우려.
-          </div>
-        </div>
-
-        <!-- 이전 이력 (아코디언) -->
-        <div class="history-accordion">
-          <div class="accordion-item">
-            <button class="accordion-toggle" onclick="toggleAccordion(this)">
-              <span>이전 분석 · 2026.06.20</span>
-              <span class="accordion-arrow">▼</span>
-            </button>
-            <div class="accordion-body">
-              <strong>불만 태그:</strong> 배송 지연, 색상 차이<br><br>
-              배송이 2주 이상 걸렸다는 후기 다수. 컬러가 화면과 다르다는 언급 반복. 전반적 만족도는 나쁘지 않음.
-            </div>
-          </div>
-          <div class="accordion-item">
-            <button class="accordion-toggle" onclick="toggleAccordion(this)">
-              <span>이전 분석 · 2026.05.11</span>
-              <span class="accordion-arrow">▼</span>
-            </button>
-            <div class="accordion-body">
-              <strong>불만 태그:</strong> 지퍼 내구성, 가격 대비 품질<br><br>
-              지퍼가 빨리 망가진다는 후기 여러 건. 10만원 이상 가격대 치고 내구성이 아쉽다는 의견 반복.
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <div id="detailBody"></div>
 </div>
 
 <script>
+  /* ─────────────────────────────────────────────
+     데이터 계층 — LocalStorage 기반 CRUD
+  ───────────────────────────────────────────── */
+  const STORAGE_KEY = 'immm_competitors';
+  let editingId = null;      // 폼 편집 중인 경쟁사 id (신규면 null)
+  let currentDetailId = null; // 상세 페이지에 표시 중인 경쟁사 id
+
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function loadCompetitors() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      console.error('저장된 데이터를 읽지 못했습니다.', e);
+      return [];
+    }
+  }
+
+  function saveCompetitors(list) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  }
+
+  function findCompetitor(id) {
+    return loadCompetitors().find(c => c.id === id) || null;
+  }
+
+  // 최초 방문 시 샘플 브랜드(스탠드오일) 1건 시드
+  function seedIfEmpty() {
+    if (localStorage.getItem(STORAGE_KEY) !== null) return;
+    saveCompetitors([{
+      id: 'seed-standoil',
+      brand: '스탠드오일',
+      url: 'https://standoil.com',
+      priceMin: '69,000',
+      priceMax: '129,000',
+      target: '20~30대 여성',
+      channels: ['무신사', '29CM', '자사몰', '스마트스토어'],
+      reviewCount: '3,120',
+      shipping: '평균 3~5일',
+      photoStyle: '화이트 배경 · 착용컷 중심',
+      discount: '월 1회 시즌오프',
+      bestName: '미니 크로스백',
+      bestPrice: '89,000',
+      material: '비건레더, PU',
+      bagType: '크로스백',
+      followers: '21.4만',
+      postFreq: '주 3~5회',
+      content: '룩북 위주, 착용컷 강조. 숏폼 간헐적. 라이브커머스 없음.',
+      memo: '미니멀 포지셔닝 강함. 수납력 약점 존재 — immm 차별화 포인트로 활용 가능. 가격대 겹침 주의.',
+      monitor: '주 1회',
+      reviews: [{
+        date: '2026.07.07',
+        tags: ['배송 지연', '마감 불균일', '소재 차이', 'AS 대응 느림'],
+        summary: '재구매 의향은 높은 편이나 배송 속도와 AS 대응에 불만이 반복 언급됨. 소재 질감이 상세페이지 사진과 차이 난다는 지적 다수. 마감 품질이 제품마다 달라 일관성 부재 우려.'
+      }],
+      createdAt: '2026.07.07',
+      updatedAt: '2026.07.07'
+    }]);
+  }
+
+  function todayStr() {
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '.' + p(d.getMonth() + 1) + '.' + p(d.getDate());
+  }
+
+  /* ─────────────────────────────────────────────
+     페이지 전환
+  ───────────────────────────────────────────── */
   function showImmmEdit() {
     document.getElementById('listPage').classList.add('hidden');
     document.getElementById('formPage').classList.remove('active');
@@ -1234,43 +1140,373 @@
     window.scrollTo(0, 0);
   }
   function showList() {
+    renderList();
     document.getElementById('listPage').classList.remove('hidden');
     document.getElementById('formPage').classList.remove('active');
     document.getElementById('detailPage').classList.remove('active');
+    document.getElementById('immmEditPage').classList.remove('active');
+    window.scrollTo(0, 0);
   }
-  function showForm() {
+  function showFormPage() {
     document.getElementById('listPage').classList.add('hidden');
     document.getElementById('formPage').classList.add('active');
     document.getElementById('detailPage').classList.remove('active');
+    document.getElementById('immmEditPage').classList.remove('active');
+    window.scrollTo(0, 0);
   }
-  function showDetail() {
+  function showDetailPage() {
     document.getElementById('listPage').classList.add('hidden');
     document.getElementById('formPage').classList.remove('active');
     document.getElementById('detailPage').classList.add('active');
+    document.getElementById('immmEditPage').classList.remove('active');
+    window.scrollTo(0, 0);
   }
-  function toggleAnalyzeBtn() {
-    const text = document.getElementById('reviewText').value.trim();
-    const btn = document.getElementById('analyzeBtn');
-    if (text.length > 0) {
-      btn.disabled = false;
-      btn.textContent = 'AI 분석 실행';
-    } else {
-      btn.disabled = true;
-      btn.textContent = 'AI 분석 실행 (리뷰 텍스트 필요)';
+
+  /* ─────────────────────────────────────────────
+     폼: 신규 등록 / 수정
+  ───────────────────────────────────────────── */
+  const FORM_FIELDS = ['brand','url','priceMin','priceMax','target','reviewCount',
+    'shipping','photoStyle','discount','bestName','bestPrice','material','bagType',
+    'followers','postFreq','content','memo','monitor'];
+
+  function clearForm() {
+    FORM_FIELDS.forEach(f => {
+      const el = document.getElementById('f_' + f);
+      if (el) el.value = '';
+    });
+    for (let i = 1; i <= 7; i++) {
+      const cb = document.getElementById('ch' + i);
+      if (cb) cb.checked = false;
     }
   }
+
+  function fillForm(c) {
+    FORM_FIELDS.forEach(f => {
+      const el = document.getElementById('f_' + f);
+      if (el) el.value = c[f] || '';
+    });
+    const chans = c.channels || [];
+    for (let i = 1; i <= 7; i++) {
+      const cb = document.getElementById('ch' + i);
+      const label = document.querySelector('label[for="ch' + i + '"]');
+      if (cb && label) cb.checked = chans.includes(label.textContent.trim());
+    }
+  }
+
+  // 신규 등록 (id 없음) 또는 수정 (id 전달)
+  function showForm(id) {
+    if (id) {
+      const c = findCompetitor(id);
+      if (!c) { alert('경쟁사를 찾을 수 없습니다.'); return; }
+      editingId = id;
+      document.getElementById('formTitle').textContent = '경쟁사 수정';
+      fillForm(c);
+    } else {
+      editingId = null;
+      document.getElementById('formTitle').textContent = '경쟁사 등록';
+      clearForm();
+    }
+    showFormPage();
+  }
+
+  function getCheckedChannels() {
+    const out = [];
+    for (let i = 1; i <= 7; i++) {
+      const cb = document.getElementById('ch' + i);
+      const label = document.querySelector('label[for="ch' + i + '"]');
+      if (cb && cb.checked && label) out.push(label.textContent.trim());
+    }
+    return out;
+  }
+
+  function saveCompetitor() {
+    const val = f => {
+      const el = document.getElementById('f_' + f);
+      return el ? el.value.trim() : '';
+    };
+
+    if (!val('brand')) { alert('브랜드명을 입력해주세요.'); document.getElementById('f_brand').focus(); return; }
+    if (!val('priceMin') || !val('priceMax')) { alert('가격대(최소·최대)를 입력해주세요.'); return; }
+
+    const list = loadCompetitors();
+    const data = {};
+    FORM_FIELDS.forEach(f => { data[f] = val(f); });
+    data.channels = getCheckedChannels();
+
+    if (editingId) {
+      const idx = list.findIndex(c => c.id === editingId);
+      if (idx !== -1) {
+        list[idx] = Object.assign({}, list[idx], data, { updatedAt: todayStr() });
+      }
+    } else {
+      list.push(Object.assign({}, data, {
+        id: 'c' + Date.now() + Math.floor(Math.random() * 1000),
+        reviews: [],
+        createdAt: todayStr(),
+        updatedAt: todayStr()
+      }));
+    }
+    saveCompetitors(list);
+    editingId = null;
+    showList();
+  }
+
+  function deleteCompetitor(id) {
+    const c = findCompetitor(id);
+    const name = c ? c.brand : '이 경쟁사';
+    if (!confirm('「' + name + '」 정보를 삭제할까요? 되돌릴 수 없습니다.')) return;
+    saveCompetitors(loadCompetitors().filter(c => c.id !== id));
+    if (currentDetailId === id) { currentDetailId = null; showList(); }
+    else renderList();
+  }
+
+  /* ─────────────────────────────────────────────
+     목록 렌더링
+  ───────────────────────────────────────────── */
+  function renderList() {
+    const grid = document.getElementById('cardGrid');
+    const list = loadCompetitors();
+    const countEl = document.getElementById('filterCount');
+    if (countEl) countEl.textContent = '총 ' + list.length + '개 브랜드';
+
+    let html = list.map(c => cardHtml(c)).join('');
+    html += '<div class="add-card" onclick="showForm()">' +
+              '<div class="add-card-icon">＋</div>' +
+              '<div class="add-card-text">새 경쟁사 추가하기</div>' +
+            '</div>';
+    grid.innerHTML = html;
+  }
+
+  function cardHtml(c) {
+    const priceRange = (c.priceMin || c.priceMax)
+      ? '₩' + (c.priceMin || '?') + '~' + (c.priceMax || '?') : '—';
+    const analyzed = c.reviews && c.reviews.length > 0;
+    const badge = analyzed
+      ? '<span class="status-badge status-done"><span class="status-dot"></span>분석 완료</span>'
+      : '<span class="status-badge status-wait"><span class="status-dot"></span>분석 대기</span>';
+
+    const channelTags = (c.channels || []).map(ch =>
+      '<span class="channel-tag">' + escapeHtml(ch) + '</span>').join('');
+    const photoTag = c.photoStyle
+      ? '<span class="channel-tag">📷 ' + escapeHtml(c.photoStyle) + '</span>' : '';
+
+    let summary;
+    if (analyzed) {
+      const latest = c.reviews[c.reviews.length - 1];
+      summary = '<div class="card-review-summary">' +
+        '<div class="review-date">최근 분석 · ' + escapeHtml(latest.date || '') + '</div>' +
+        escapeHtml(latest.summary || '') + '</div>';
+    } else {
+      summary = '<div class="card-review-summary empty">아직 리뷰 분석 이력이 없습니다.</div>';
+    }
+
+    return '' +
+      '<div class="competitor-card" onclick="showDetail(\'' + c.id + '\')">' +
+        '<div class="card-top">' +
+          '<div>' +
+            '<div class="card-brand">' + escapeHtml(c.brand) + '</div>' +
+            '<div class="card-url">' + escapeHtml(c.url || '') + '</div>' +
+          '</div>' + badge +
+        '</div>' +
+        '<div class="card-meta">' +
+          metaItem('가격대', priceRange) +
+          metaItem('후기 수', c.reviewCount || '—') +
+          metaItem('배송 속도', c.shipping || '—') +
+          metaItem('할인 빈도', c.discount || '—') +
+        '</div>' +
+        ((photoTag || channelTags) ? '<div class="card-channels">' + photoTag + channelTags + '</div>' : '') +
+        summary +
+        '<div class="card-footer">' +
+          '<span class="updated-at">업데이트 ' + escapeHtml(c.updatedAt || c.createdAt || '') + '</span>' +
+          '<div class="card-actions" onclick="event.stopPropagation()">' +
+            '<button class="btn-icon" title="수정" onclick="showForm(\'' + c.id + '\')">✏️</button>' +
+            '<button class="btn-icon danger" title="삭제" onclick="deleteCompetitor(\'' + c.id + '\')">🗑</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function metaItem(label, value) {
+    return '<div class="meta-item">' +
+             '<div class="meta-label">' + escapeHtml(label) + '</div>' +
+             '<div class="meta-value">' + escapeHtml(value) + '</div>' +
+           '</div>';
+  }
+
+  /* ─────────────────────────────────────────────
+     상세(조회) 렌더링
+  ───────────────────────────────────────────── */
+  function showDetail(id) {
+    const c = findCompetitor(id);
+    if (!c) { alert('경쟁사를 찾을 수 없습니다.'); return; }
+    currentDetailId = id;
+    document.getElementById('detailBody').innerHTML = detailHtml(c);
+    showDetailPage();
+  }
+
+  function detailField(label, value, full) {
+    return '<div class="detail-field"' + (full ? ' style="grid-column:1/-1"' : '') + '>' +
+             '<div class="detail-field-label">' + escapeHtml(label) + '</div>' +
+             '<div class="detail-field-value">' + escapeHtml(value || '—') + '</div>' +
+           '</div>';
+  }
+
+  function detailHtml(c) {
+    const priceRange = (c.priceMin || c.priceMax)
+      ? '₩' + (c.priceMin || '?') + ' ~ ' + (c.priceMax || '?') : '—';
+    const channels = (c.channels || []).length
+      ? (c.channels).map(ch => '<span class="channel-tag">' + escapeHtml(ch) + '</span>').join('')
+      : '<span class="detail-field-value">—</span>';
+
+    // 리뷰 분석 이력
+    let reviewsHtml = '';
+    const reviews = (c.reviews || []).slice();
+    if (reviews.length > 0) {
+      const latest = reviews[reviews.length - 1];
+      const tagHtml = (latest.tags || []).map(t => '<span class="history-tag">' + escapeHtml(t) + '</span>').join('');
+      reviewsHtml += '<div class="history-latest">' +
+        '<div class="history-latest-label">최신 분석 결과</div>' +
+        '<div class="history-date">' + escapeHtml(latest.date || '') + '</div>' +
+        (tagHtml ? '<div class="history-tags">' + tagHtml + '</div>' : '') +
+        '<div class="history-summary">' + escapeHtml(latest.summary || '') + '</div>' +
+      '</div>';
+      const prev = reviews.slice(0, -1).reverse();
+      if (prev.length > 0) {
+        reviewsHtml += '<div class="history-accordion">' + prev.map(r => {
+          const tags = (r.tags || []).join(', ');
+          return '<div class="accordion-item">' +
+            '<button class="accordion-toggle" onclick="toggleAccordion(this)">' +
+              '<span>이전 분석 · ' + escapeHtml(r.date || '') + '</span>' +
+              '<span class="accordion-arrow">▼</span>' +
+            '</button>' +
+            '<div class="accordion-body">' +
+              (tags ? '<strong>불만 태그:</strong> ' + escapeHtml(tags) + '<br><br>' : '') +
+              escapeHtml(r.summary || '') +
+            '</div>' +
+          '</div>';
+        }).join('') + '</div>';
+      }
+    } else {
+      reviewsHtml = '<div class="card-review-summary empty" style="margin-top:12px">아직 분석 이력이 없습니다.</div>';
+    }
+
+    return '' +
+    '<div class="detail-header">' +
+      '<div>' +
+        '<button class="btn-back" onclick="showList()" style="margin-bottom:6px">← 목록으로</button>' +
+        '<div class="detail-brand">' + escapeHtml(c.brand) + '</div>' +
+        (c.url ? '<a href="' + escapeHtml(c.url) + '" target="_blank" class="detail-url">' + escapeHtml(c.url) + ' ↗</a>' : '') +
+      '</div>' +
+      '<div class="detail-actions">' +
+        '<button class="btn-secondary" onclick="showForm(\'' + c.id + '\')">✏️ 수정</button>' +
+        '<button class="btn-secondary" style="color:var(--danger);border-color:var(--danger)" onclick="deleteCompetitor(\'' + c.id + '\')">🗑 삭제</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="detail-grid">' +
+      '<div>' +
+        '<div class="detail-section">' +
+          '<div class="detail-section-title">기본 정보</div>' +
+          '<div class="detail-fields">' +
+            detailField('가격대', priceRange) +
+            detailField('타깃', c.target) +
+            '<div class="detail-field" style="grid-column:1/-1">' +
+              '<div class="detail-field-label">판매 채널</div>' +
+              '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:2px">' + channels + '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="detail-section">' +
+          '<div class="detail-section-title">경쟁 지표</div>' +
+          '<div class="detail-fields">' +
+            detailField('후기 수', c.reviewCount) +
+            detailField('배송 속도', c.shipping) +
+            detailField('사진 스타일', c.photoStyle) +
+            detailField('할인 빈도', c.discount) +
+          '</div>' +
+        '</div>' +
+        '<div class="detail-section">' +
+          '<div class="detail-section-title">상품 정보</div>' +
+          '<div class="detail-fields">' +
+            detailField('베스트셀러', c.bestName) +
+            detailField('가격', c.bestPrice ? '₩' + c.bestPrice : '') +
+            detailField('주요 소재', c.material) +
+            detailField('가방 종류', c.bagType) +
+          '</div>' +
+        '</div>' +
+        '<div class="detail-section">' +
+          '<div class="detail-section-title">SNS 현황</div>' +
+          '<div class="detail-fields">' +
+            detailField('인스타 팔로워', c.followers) +
+            detailField('게시물 빈도', c.postFreq) +
+            detailField('콘텐츠 방식', c.content, true) +
+          '</div>' +
+        '</div>' +
+        '<div class="detail-section">' +
+          '<div class="detail-section-title">메모</div>' +
+          '<div style="font-size:13px;color:var(--text-secondary);line-height:1.6">' +
+            (c.memo ? escapeHtml(c.memo) : '<span style="color:var(--text-muted)">메모 없음</span>') +
+            (c.monitor ? '<br><br><span style="color:var(--text-muted)">모니터링 주기: ' + escapeHtml(c.monitor) + '</span>' : '') +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div>' +
+        '<div class="detail-section">' +
+          '<div class="detail-section-title">불만 리뷰 분석</div>' +
+          '<div class="review-hint">리뷰 텍스트를 붙여넣고 저장하면 이력에 날짜별로 누적돼요</div>' +
+          '<textarea class="review-input-area" id="reviewText" placeholder="무신사·29CM 등에서 복사한 리뷰 텍스트를 여기에 붙여넣으세요" oninput="toggleAnalyzeBtn()"></textarea>' +
+          '<button class="btn-analyze" id="analyzeBtn" disabled onclick="runAnalyze()">분석 기록 저장 (리뷰 텍스트 필요)</button>' +
+          reviewsHtml +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  // 붙여넣은 리뷰 텍스트를 날짜별 이력으로 저장 (실제 AI 분석은 MVP1에서 Claude API 연동 예정)
+  function runAnalyze() {
+    if (!currentDetailId) return;
+    const ta = document.getElementById('reviewText');
+    const text = ta ? ta.value.trim() : '';
+    if (!text) return;
+    const list = loadCompetitors();
+    const idx = list.findIndex(c => c.id === currentDetailId);
+    if (idx === -1) return;
+    if (!list[idx].reviews) list[idx].reviews = [];
+    list[idx].reviews.push({ date: todayStr(), tags: [], summary: text });
+    list[idx].updatedAt = todayStr();
+    saveCompetitors(list);
+    showDetail(currentDetailId);
+  }
+
+  function toggleAnalyzeBtn() {
+    const el = document.getElementById('reviewText');
+    const btn = document.getElementById('analyzeBtn');
+    if (!el || !btn) return;
+    if (el.value.trim().length > 0) {
+      btn.disabled = false;
+      btn.textContent = '분석 기록 저장';
+    } else {
+      btn.disabled = true;
+      btn.textContent = '분석 기록 저장 (리뷰 텍스트 필요)';
+    }
+  }
+
   function toggleAccordion(btn) {
     const body = btn.nextElementSibling;
     const arrow = btn.querySelector('.accordion-arrow');
     body.classList.toggle('open');
     arrow.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
   }
+
   document.querySelectorAll('.filter-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
     });
   });
+
+  // 초기화
+  seedIfEmpty();
+  renderList();
 </script>
 
 <!-- ─── immm 내 브랜드 편집 페이지 ─── -->
