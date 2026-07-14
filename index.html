@@ -1054,10 +1054,21 @@
 
 <script>
   /* ─────────────────────────────────────────────
-     데이터 계층 — LocalStorage 기반 CRUD
+     데이터 계층 — Supabase(클라우드 DB) 기반 CRUD
+     · 데이터는 이제 브라우저 포스트잇이 아니라 Supabase 창고에 저장됩니다.
+     · 화면은 빠르게 유지하려고 메모리 캐시(competitors)에 한 벌 담아두고,
+       추가/수정/삭제할 때마다 Supabase에도 함께 반영합니다.
   ───────────────────────────────────────────── */
-  const STORAGE_KEY = 'immm_competitors';
-  let editingId = null;      // 폼 편집 중인 경쟁사 id (신규면 null)
+  const SUPABASE_URL = 'https://osaonibsupitgpwrwoch.supabase.co/rest/v1';
+  const SUPABASE_KEY = 'sb_publishable_OwSlnxWlOI8bXQF3bHdKmA_6CV1Tm-c';
+  const SB_HEADERS = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json'
+  };
+
+  let competitors = [];       // Supabase에서 불러온 경쟁사 목록(메모리 캐시)
+  let editingId = null;       // 폼 편집 중인 경쟁사 id (신규면 null)
   let currentDetailId = null; // 상세 페이지에 표시 중인 경쟁사 id
 
   function escapeHtml(str) {
@@ -1069,58 +1080,98 @@
       .replace(/'/g, '&#39;');
   }
 
-  function loadCompetitors() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) {
-      console.error('저장된 데이터를 읽지 못했습니다.', e);
-      return [];
-    }
+  // DB 행(snake_case) → 앱 객체(camelCase)
+  function rowToCompetitor(r) {
+    return {
+      id: r.id,
+      brand: r.brand || '',
+      url: r.url || '',
+      priceMin: r.price_min || '',
+      priceMax: r.price_max || '',
+      target: r.target || '',
+      channels: Array.isArray(r.channels) ? r.channels : [],
+      reviewCount: r.review_count || '',
+      shipping: r.shipping || '',
+      photoStyle: r.photo_style || '',
+      discount: r.discount || '',
+      bestName: r.best_name || '',
+      bestPrice: r.best_price || '',
+      material: r.material || '',
+      bagType: r.bag_type || '',
+      followers: r.followers || '',
+      postFreq: r.post_freq || '',
+      content: r.content || '',
+      memo: r.memo || '',
+      monitor: r.monitor || '',
+      reviews: Array.isArray(r.reviews) ? r.reviews : [],
+      createdAt: r.created_at || '',
+      updatedAt: r.updated_at || ''
+    };
   }
 
-  function saveCompetitors(list) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  // 앱 객체(camelCase) → DB 행(snake_case)
+  function competitorToRow(c) {
+    return {
+      id: c.id,
+      brand: c.brand || '',
+      url: c.url || '',
+      price_min: c.priceMin || '',
+      price_max: c.priceMax || '',
+      target: c.target || '',
+      channels: c.channels || [],
+      review_count: c.reviewCount || '',
+      shipping: c.shipping || '',
+      photo_style: c.photoStyle || '',
+      discount: c.discount || '',
+      best_name: c.bestName || '',
+      best_price: c.bestPrice || '',
+      material: c.material || '',
+      bag_type: c.bagType || '',
+      followers: c.followers || '',
+      post_freq: c.postFreq || '',
+      content: c.content || '',
+      memo: c.memo || '',
+      monitor: c.monitor || '',
+      reviews: c.reviews || [],
+      created_at: c.createdAt || '',
+      updated_at: c.updatedAt || ''
+    };
   }
 
-  function findCompetitor(id) {
-    return loadCompetitors().find(c => c.id === id) || null;
+  // Supabase REST 호출 (경쟁사 테이블)
+  async function sbGetCompetitors() {
+    const res = await fetch(SUPABASE_URL + '/competitors?select=*&order=inserted_at.asc', { headers: SB_HEADERS });
+    if (!res.ok) throw new Error('불러오기 실패 (' + res.status + ')');
+    return (await res.json()).map(rowToCompetitor);
+  }
+  async function sbInsertCompetitor(c) {
+    const res = await fetch(SUPABASE_URL + '/competitors', {
+      method: 'POST',
+      headers: Object.assign({}, SB_HEADERS, { 'Prefer': 'return=representation' }),
+      body: JSON.stringify(competitorToRow(c))
+    });
+    if (!res.ok) throw new Error('저장 실패 (' + res.status + ')');
+    return rowToCompetitor((await res.json())[0]);
+  }
+  async function sbUpdateCompetitor(id, c) {
+    const res = await fetch(SUPABASE_URL + '/competitors?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH',
+      headers: Object.assign({}, SB_HEADERS, { 'Prefer': 'return=representation' }),
+      body: JSON.stringify(competitorToRow(c))
+    });
+    if (!res.ok) throw new Error('수정 실패 (' + res.status + ')');
+    return rowToCompetitor((await res.json())[0]);
+  }
+  async function sbDeleteCompetitor(id) {
+    const res = await fetch(SUPABASE_URL + '/competitors?id=eq.' + encodeURIComponent(id), {
+      method: 'DELETE', headers: SB_HEADERS
+    });
+    if (!res.ok) throw new Error('삭제 실패 (' + res.status + ')');
   }
 
-  // 최초 방문 시 샘플 브랜드(스탠드오일) 1건 시드
-  function seedIfEmpty() {
-    if (localStorage.getItem(STORAGE_KEY) !== null) return;
-    saveCompetitors([{
-      id: 'seed-standoil',
-      brand: '스탠드오일',
-      url: 'https://standoil.com',
-      priceMin: '69,000',
-      priceMax: '129,000',
-      target: '20~30대 여성',
-      channels: ['무신사', '29CM', '자사몰', '스마트스토어'],
-      reviewCount: '3,120',
-      shipping: '평균 3~5일',
-      photoStyle: '화이트 배경 · 착용컷 중심',
-      discount: '월 1회 시즌오프',
-      bestName: '미니 크로스백',
-      bestPrice: '89,000',
-      material: '비건레더, PU',
-      bagType: '크로스백',
-      followers: '21.4만',
-      postFreq: '주 3~5회',
-      content: '룩북 위주, 착용컷 강조. 숏폼 간헐적. 라이브커머스 없음.',
-      memo: '미니멀 포지셔닝 강함. 수납력 약점 존재 — immm 차별화 포인트로 활용 가능. 가격대 겹침 주의.',
-      monitor: '주 1회',
-      reviews: [{
-        date: '2026.07.07',
-        categories: ['배송 지연', '마감 불균일', '소재 차이', 'AS 대응 느림'],
-        keywords: ['배송', 'AS', '소재', '마감', '재구매'],
-        summary: '재구매 의향은 높은 편이나 배송 속도와 AS 대응에 불만이 반복 언급됨. 소재 질감이 상세페이지 사진과 차이 난다는 지적 다수. 마감 품질이 제품마다 달라 일관성 부재 우려.'
-      }],
-      createdAt: '2026.07.07',
-      updatedAt: '2026.07.07'
-    }]);
-  }
+  // 메모리 캐시에서 읽는 헬퍼 (렌더링 코드는 그대로 이걸 사용)
+  function loadCompetitors() { return competitors; }
+  function findCompetitor(id) { return competitors.find(c => c.id === id) || null; }
 
   function todayStr() {
     const d = new Date();
@@ -1223,7 +1274,7 @@
     return out;
   }
 
-  function saveCompetitor() {
+  async function saveCompetitor() {
     const val = f => {
       const el = document.getElementById('f_' + f);
       return el ? el.value.trim() : '';
@@ -1232,47 +1283,65 @@
     if (!val('brand')) { alert('브랜드명을 입력해주세요.'); document.getElementById('f_brand').focus(); return; }
     if (!val('priceMin') || !val('priceMax')) { alert('가격대(최소·최대)를 입력해주세요.'); return; }
 
-    const list = loadCompetitors();
     const data = {};
     FORM_FIELDS.forEach(f => { data[f] = val(f); });
     data.channels = getCheckedChannels();
 
-    if (editingId) {
-      const idx = list.findIndex(c => c.id === editingId);
-      if (idx !== -1) {
-        list[idx] = Object.assign({}, list[idx], data, { updatedAt: todayStr() });
+    const saveBtn = document.querySelector('#formPage .form-actions .btn-primary');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '저장 중…'; }
+
+    try {
+      if (editingId) {
+        const idx = competitors.findIndex(c => c.id === editingId);
+        const merged = Object.assign({}, competitors[idx] || {}, data, { updatedAt: todayStr() });
+        const saved = await sbUpdateCompetitor(editingId, merged);
+        if (idx !== -1) competitors[idx] = saved;
+      } else {
+        const fresh = Object.assign({}, data, {
+          id: 'c' + Date.now() + Math.floor(Math.random() * 1000),
+          reviews: [],
+          createdAt: todayStr(),
+          updatedAt: todayStr()
+        });
+        const saved = await sbInsertCompetitor(fresh);
+        competitors.push(saved);
       }
-    } else {
-      list.push(Object.assign({}, data, {
-        id: 'c' + Date.now() + Math.floor(Math.random() * 1000),
-        reviews: [],
-        createdAt: todayStr(),
-        updatedAt: todayStr()
-      }));
+      editingId = null;
+      showList();
+    } catch (e) {
+      alert('저장 중 문제가 발생했어요: ' + (e && e.message ? e.message : e));
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '저장하기'; }
     }
-    saveCompetitors(list);
-    editingId = null;
-    showList();
   }
 
-  // 저장된 모든 경쟁사 데이터를 삭제 (빈 배열로 재설정 → 샘플 재시드 안 함)
-  function resetAll() {
-    const total = loadCompetitors().length;
+  // 저장된 모든 경쟁사 데이터를 Supabase에서 삭제
+  async function resetAll() {
+    const total = competitors.length;
     if (total === 0) { alert('삭제할 경쟁사 데이터가 없습니다.'); return; }
     if (!confirm('저장된 경쟁사 ' + total + '개를 모두 삭제할까요? 되돌릴 수 없습니다.')) return;
-    saveCompetitors([]);
-    currentDetailId = null;
-    editingId = null;
-    showList();
+    try {
+      await Promise.all(competitors.map(c => sbDeleteCompetitor(c.id)));
+      competitors = [];
+      currentDetailId = null;
+      editingId = null;
+      showList();
+    } catch (e) {
+      alert('초기화 중 문제가 발생했어요: ' + (e && e.message ? e.message : e));
+    }
   }
 
-  function deleteCompetitor(id) {
+  async function deleteCompetitor(id) {
     const c = findCompetitor(id);
     const name = c ? c.brand : '이 경쟁사';
     if (!confirm('「' + name + '」 정보를 삭제할까요? 되돌릴 수 없습니다.')) return;
-    saveCompetitors(loadCompetitors().filter(c => c.id !== id));
-    if (currentDetailId === id) { currentDetailId = null; showList(); }
-    else renderList();
+    try {
+      await sbDeleteCompetitor(id);
+      competitors = competitors.filter(c => c.id !== id);
+      if (currentDetailId === id) { currentDetailId = null; showList(); }
+      else renderList();
+    } catch (e) {
+      alert('삭제 중 문제가 발생했어요: ' + (e && e.message ? e.message : e));
+    }
   }
 
   /* ─────────────────────────────────────────────
@@ -1508,18 +1577,18 @@
         throw new Error(data.error || 'AI 분석에 실패했어요. 잠시 후 다시 시도해 주세요.');
       }
 
-      const list = loadCompetitors();
-      const idx = list.findIndex(c => c.id === currentDetailId);
+      const idx = competitors.findIndex(c => c.id === currentDetailId);
       if (idx === -1) return;
-      if (!list[idx].reviews) list[idx].reviews = [];
-      list[idx].reviews.push({
+      const updated = Object.assign({}, competitors[idx]);
+      updated.reviews = (updated.reviews || []).concat([{
         date: todayStr(),
         categories: Array.isArray(data.categories) ? data.categories : [],
         keywords: Array.isArray(data.keywords) ? data.keywords : [],
         summary: typeof data.summary === 'string' ? data.summary : ''
-      });
-      list[idx].updatedAt = todayStr();
-      saveCompetitors(list);
+      }]);
+      updated.updatedAt = todayStr();
+      const saved = await sbUpdateCompetitor(currentDetailId, updated); // Supabase에 이력 저장
+      competitors[idx] = saved;
       showDetail(currentDetailId); // 재렌더 → 버튼도 새로 그려짐(빈 입력이라 자동 비활성)
     } catch (e) {
       const raw = e && e.message ? e.message : '';
@@ -1559,9 +1628,24 @@
     });
   });
 
-  // 초기화
-  seedIfEmpty();
-  renderList();
+  // 초기화 — Supabase에서 경쟁사 목록을 불러온 뒤 화면을 그림
+  (async function init() {
+    const grid = document.getElementById('cardGrid');
+    if (grid) grid.innerHTML = '<div style="grid-column:1/-1;padding:20px;color:var(--text-muted);font-size:13px">불러오는 중…</div>';
+    try {
+      competitors = await sbGetCompetitors();
+      renderList();
+    } catch (e) {
+      competitors = [];
+      renderList();
+      if (grid) {
+        grid.insertAdjacentHTML('afterbegin',
+          '<div style="grid-column:1/-1;padding:14px;border:1px solid var(--danger);border-radius:10px;color:var(--danger);font-size:13px;margin-bottom:4px">' +
+          'Supabase에서 데이터를 불러오지 못했어요. 테이블 생성(SQL 실행)과 연결 정보를 확인해 주세요. (' + escapeHtml(e && e.message ? e.message : e) + ')' +
+          '</div>');
+      }
+    }
+  })();
 </script>
 
 <!-- ─── immm 내 브랜드 편집 페이지 ─── -->
