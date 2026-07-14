@@ -1113,7 +1113,8 @@
       monitor: '주 1회',
       reviews: [{
         date: '2026.07.07',
-        tags: ['배송 지연', '마감 불균일', '소재 차이', 'AS 대응 느림'],
+        categories: ['배송 지연', '마감 불균일', '소재 차이', 'AS 대응 느림'],
+        keywords: ['배송', 'AS', '소재', '마감', '재구매'],
         summary: '재구매 의향은 높은 편이나 배송 속도와 AS 대응에 불만이 반복 언급됨. 소재 질감이 상세페이지 사진과 차이 난다는 지적 다수. 마감 품질이 제품마다 달라 일관성 부재 우려.'
       }],
       createdAt: '2026.07.07',
@@ -1372,29 +1373,39 @@
       ? (c.channels).map(ch => '<span class="channel-tag">' + escapeHtml(ch) + '</span>').join('')
       : '<span class="detail-field-value">—</span>';
 
-    // 리뷰 분석 이력
+    // 리뷰 분석 이력 — 카테고리(불만) + 키워드 + 한줄 요약
+    const catList = r => (r.categories && r.categories.length ? r.categories : (r.tags || []));
+    const tagRow = (label, items, cls) => {
+      if (!items || !items.length) return '';
+      return '<div style="font-size:10px;color:var(--text-muted);margin:6px 0 4px">' + label + '</div>' +
+        '<div class="history-tags">' +
+        items.map(t => '<span class="' + cls + '">' + escapeHtml(t) + '</span>').join('') +
+        '</div>';
+    };
     let reviewsHtml = '';
     const reviews = (c.reviews || []).slice();
     if (reviews.length > 0) {
       const latest = reviews[reviews.length - 1];
-      const tagHtml = (latest.tags || []).map(t => '<span class="history-tag">' + escapeHtml(t) + '</span>').join('');
       reviewsHtml += '<div class="history-latest">' +
         '<div class="history-latest-label">최신 분석 결과</div>' +
         '<div class="history-date">' + escapeHtml(latest.date || '') + '</div>' +
-        (tagHtml ? '<div class="history-tags">' + tagHtml + '</div>' : '') +
-        '<div class="history-summary">' + escapeHtml(latest.summary || '') + '</div>' +
+        tagRow('주요 불만 카테고리', catList(latest), 'history-tag') +
+        tagRow('반복 키워드', latest.keywords, 'channel-tag') +
+        '<div class="history-summary" style="margin-top:8px">' + escapeHtml(latest.summary || '') + '</div>' +
       '</div>';
       const prev = reviews.slice(0, -1).reverse();
       if (prev.length > 0) {
         reviewsHtml += '<div class="history-accordion">' + prev.map(r => {
-          const tags = (r.tags || []).join(', ');
+          const cats = catList(r).join(', ');
+          const kws = (r.keywords || []).join(', ');
           return '<div class="accordion-item">' +
             '<button class="accordion-toggle" onclick="toggleAccordion(this)">' +
               '<span>이전 분석 · ' + escapeHtml(r.date || '') + '</span>' +
               '<span class="accordion-arrow">▼</span>' +
             '</button>' +
             '<div class="accordion-body">' +
-              (tags ? '<strong>불만 태그:</strong> ' + escapeHtml(tags) + '<br><br>' : '') +
+              (cats ? '<strong>불만 카테고리:</strong> ' + escapeHtml(cats) + '<br>' : '') +
+              (kws ? '<strong>반복 키워드:</strong> ' + escapeHtml(kws) + '<br><br>' : (cats ? '<br>' : '')) +
               escapeHtml(r.summary || '') +
             '</div>' +
           '</div>';
@@ -1466,29 +1477,59 @@
       '<div>' +
         '<div class="detail-section">' +
           '<div class="detail-section-title">불만 리뷰 분석</div>' +
-          '<div class="review-hint">리뷰 텍스트를 붙여넣고 저장하면 이력에 날짜별로 누적돼요</div>' +
+          '<div class="review-hint">리뷰 텍스트를 붙여넣고 “AI 분석 실행”을 누르면 Claude AI가 주요 불만 카테고리·반복 키워드·한줄 요약을 뽑아 날짜별 이력으로 저장해요</div>' +
           '<textarea class="review-input-area" id="reviewText" placeholder="무신사·29CM 등에서 복사한 리뷰 텍스트를 여기에 붙여넣으세요" oninput="toggleAnalyzeBtn()"></textarea>' +
-          '<button class="btn-analyze" id="analyzeBtn" disabled onclick="runAnalyze()">분석 기록 저장 (리뷰 텍스트 필요)</button>' +
+          '<button class="btn-analyze" id="analyzeBtn" disabled onclick="runAnalyze()">AI 분석 실행 (리뷰 텍스트 필요)</button>' +
           reviewsHtml +
         '</div>' +
       '</div>' +
     '</div>';
   }
 
-  // 붙여넣은 리뷰 텍스트를 날짜별 이력으로 저장 (실제 AI 분석은 MVP1에서 Claude API 연동 예정)
-  function runAnalyze() {
+  // 붙여넣은 리뷰 텍스트를 서버(api/analyze)로 보내 Claude AI가 분석 → 날짜별 이력으로 누적 저장
+  async function runAnalyze() {
     if (!currentDetailId) return;
     const ta = document.getElementById('reviewText');
+    const btn = document.getElementById('analyzeBtn');
     const text = ta ? ta.value.trim() : '';
-    if (!text) return;
-    const list = loadCompetitors();
-    const idx = list.findIndex(c => c.id === currentDetailId);
-    if (idx === -1) return;
-    if (!list[idx].reviews) list[idx].reviews = [];
-    list[idx].reviews.push({ date: todayStr(), tags: [], summary: text });
-    list[idx].updatedAt = todayStr();
-    saveCompetitors(list);
-    showDetail(currentDetailId);
+    if (!text || !btn) return;
+
+    btn.disabled = true;
+    btn.textContent = 'AI 분석 중…';
+
+    try {
+      const resp = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ reviews: text })
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        throw new Error(data.error || 'AI 분석에 실패했어요. 잠시 후 다시 시도해 주세요.');
+      }
+
+      const list = loadCompetitors();
+      const idx = list.findIndex(c => c.id === currentDetailId);
+      if (idx === -1) return;
+      if (!list[idx].reviews) list[idx].reviews = [];
+      list[idx].reviews.push({
+        date: todayStr(),
+        categories: Array.isArray(data.categories) ? data.categories : [],
+        keywords: Array.isArray(data.keywords) ? data.keywords : [],
+        summary: typeof data.summary === 'string' ? data.summary : ''
+      });
+      list[idx].updatedAt = todayStr();
+      saveCompetitors(list);
+      showDetail(currentDetailId); // 재렌더 → 버튼도 새로 그려짐(빈 입력이라 자동 비활성)
+    } catch (e) {
+      const raw = e && e.message ? e.message : '';
+      const msg = (raw && !/fetch/i.test(raw))
+        ? raw
+        : 'AI 분석 서버에 연결하지 못했어요. 이 기능은 Vercel로 배포한 뒤에 작동해요. (지금 GitHub Pages에서는 꺼져 있어요.)';
+      alert(msg);
+      btn.disabled = false;
+      btn.textContent = 'AI 분석 실행';
+    }
   }
 
   function toggleAnalyzeBtn() {
@@ -1497,10 +1538,10 @@
     if (!el || !btn) return;
     if (el.value.trim().length > 0) {
       btn.disabled = false;
-      btn.textContent = '분석 기록 저장';
+      btn.textContent = 'AI 분석 실행';
     } else {
       btn.disabled = true;
-      btn.textContent = '분석 기록 저장 (리뷰 텍스트 필요)';
+      btn.textContent = 'AI 분석 실행 (리뷰 텍스트 필요)';
     }
   }
 
